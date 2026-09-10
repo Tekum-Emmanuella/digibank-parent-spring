@@ -59,17 +59,20 @@ mvn clean install -DskipTests
 
 ## Running Locally
 
-The application is configured for WildFly JNDI datasource by default. For local development, use the `local` Spring profile:
+The application is configured for WildFly JNDI datasource by default. For local development, use the `local` Spring profile together with the `localRun` Maven profile (which bundles the embedded Tomcat container):
 
 ```bash
-mvn spring-boot:run -pl digibank-app -Dspring-boot.run.profiles=local
+mvn -DlocalRun spring-boot:run -pl digibank-app -Dspring-boot.run.profiles=local
 ```
 
-Or run the packaged WAR directly with the local profile:
+Or build an executable WAR with the embedded container and run it directly:
 
 ```bash
+mvn -DlocalRun clean package -pl digibank-app -DskipTests
 java -jar digibank-app/target/digibank-app.war --spring.profiles.active=local
 ```
+
+Then open http://localhost:8080/digibank-app/
 
 Local profile properties (`application-local.properties`):
 - JDBC URL: `jdbc:postgresql://localhost:5432/digibank_db`
@@ -78,13 +81,19 @@ Local profile properties (`application-local.properties`):
 
 ## Deploying to WildFly
 
-1. Configure a datasource in `standalone.xml`:
+1. Install the PostgreSQL driver as a WildFly module and declare a datasource in `standalone.xml`:
    - JNDI name: `java:/jdbc/DigiBankDS`
    - Connection URL: `jdbc:postgresql://localhost:5432/digibank_db`
    - Username: `digibank_user`
    - Password: `digibank_pwd`
 
-2. Deploy using the WildFly Maven plugin:
+2. Create a management user matching the Maven plugin credentials (username `admin`, password `admin`):
+
+```bash
+$WILDFLY_HOME/bin/add-user.sh
+```
+
+3. Start WildFly, then deploy using the WildFly Maven plugin:
 
 ```bash
 mvn wildfly:deploy -pl digibank-app
